@@ -88,8 +88,9 @@ public class Sample : MonoBehaviour
 - Unity 2022.3.9f1 以上で動作確認
 
 ## 参考
-- [Zenn 記事 - UI と Sprite の重なり検出を汎用化する実装例](https://zenn.dev/gameshitai/articles/dbefb7f7551a12)  
-  記事では実装の背景や工夫点などを解説しています。
+- [Zenn - 【Unity2D】UIと非UIの当たり判定【GIFアリ,SpriteRenderer】](https://zenn.dev/gameshitai/articles/dbefb7f7551a12)  
+  記事では実装の背景や工夫点などを解説している
 
 ## ライセンス
-このリポジトリは MIT License の下で公開されています。詳細は `LICENSE` ファイルを参照してください。
+- このリポジトリは MIT License の下で公開されている
+- 詳細は `LICENSE` ファイル参照
