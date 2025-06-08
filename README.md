@@ -46,6 +46,9 @@ classDiagram
     UISpriteOverlapDetector "1" --> "*" RectTransform
 ```
 
+## 導入方法
+- UISpriteOverlapDetector.dll を Unity プロジェクトの `Assets/Plugins` に追加
+
 ## 使用例
 ```csharp
 public class Sample : MonoBehaviour
