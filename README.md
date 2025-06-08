@@ -1,13 +1,14 @@
 # UISpriteOverlapDetector
 
-Unity 用のスクリプト群で、`RectTransform` を持つ UI と `SpriteRenderer` などの非 UI コンポーネントの重なりを検出します。対象同士が重なった瞬間・重なっている間・離れた瞬間をそれぞれイベントとして受け取れるため、UI の半透明化や当たり判定の補助などに利用できます。
+- Unity2D 用のスクリプト群で、`RectTransform` を持つ UI と `SpriteRenderer` などの非 UI の重なりを検出する
+- 対象同士が重なった瞬間, 重なっている間, 離れた瞬間をそれぞれイベントとして受け取り、UI の半透明化や当たり判定の補助などに利用できる
 
 ## 機能
 - 任意の `RectTransform` と `SpriteRenderer` を登録して画面上での重なりを監視
-- 重なりの状態に応じて `OnOverlapEnter` / `OnOverlapStay` / `OnOverlapExit` を発火
+- 重なりの状態に応じて `OnOverlapEnter`, `OnOverlapStay`, `OnOverlapExit` を発火
 - 判定アルゴリズムを `IOverlapStrategy` で差し替え可能
   - 軸整列矩形を用いる `AABBStrategy`
-  - 傾きも考慮する `SATStrategy`
+  - 傾きも考慮する `SATStrategy` (OBB)
 - `IncludeRotated` オプションで自動的に判定方法を切り替え
 - Gizmos による確認用のデバッグ描画
 
@@ -84,8 +85,8 @@ public class Sample : MonoBehaviour
 - Unity 2022.3.9f1 以上で動作確認
 
 ## 参考
-- [Zenn 記事 - UI と Sprite の重なり検出を汎用化する実装例](https://zenn.dev/)  
-  記事では実装の背景や設計方針、アルゴリズムの選択理由などを解説しています。
+- [Zenn 記事 - UI と Sprite の重なり検出を汎用化する実装例](https://zenn.dev/gameshitai/articles/dbefb7f7551a12)  
+  記事では実装の背景や工夫点などを解説しています。
 
 ## ライセンス
 このリポジトリは MIT License の下で公開されています。詳細は `LICENSE` ファイルを参照してください。
