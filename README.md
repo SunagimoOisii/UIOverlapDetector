@@ -89,7 +89,7 @@ public class Sample : MonoBehaviour
 
 ## 参考
 - [Zenn - 【Unity2D】UIと非UIの当たり判定【GIFアリ,SpriteRenderer】](https://zenn.dev/gameshitai/articles/dbefb7f7551a12)  
-  記事では実装の背景や工夫点などを解説している
+  記事では実装の背景や工夫点、GIF付の利用例などを解説している
 
 ## ライセンス
 - このリポジトリは MIT License の下で公開されている
