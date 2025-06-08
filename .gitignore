@@ -1,0 +1,19 @@
+# Visual Studio 関連
+.vs/
+
+# ビルド成果物
+bin/
+obj/
+ref/
+
+# その他の一般的なキャッシュや生成ファイル
+*.csproj
+*.sln
+*.suo
+*.user
+*.db
+*.log
+*.tmp
+*.userprefs
+SoundSystemPlugin_ForUnity_Project/obj/Debug/netstandard2.1/SoundSystemPlugin_ForUnity_Project.AssemblyInfo.cs
+SoundSystemPlugin_ForUnity_Project/obj/Debug/netstandard2.1/SoundSystemPlugin_ForUnity_Project.AssemblyInfoInputs.cache
