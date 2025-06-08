@@ -8,7 +8,6 @@ ref/
 
 # その他の一般的なキャッシュや生成ファイル
 *.csproj
-*.sln
 *.suo
 *.user
 *.db
