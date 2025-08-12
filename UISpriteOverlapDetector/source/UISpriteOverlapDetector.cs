@@ -34,7 +34,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         public bool Equals(PairKey other) => c == other.c && r == other.r;
         public override int GetHashCode() => HashCode.Combine(c, r);
     }
-    private readonly List<PairKey> previousState = new();
+    private readonly HashSet<PairKey> previousState = new();
     private IOverlapStrategy strategy;
 
     #region 外部公開関数
@@ -78,7 +78,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     private void LateUpdate()
     {
         var cam = (targetCamera != null) ? targetCamera : Camera.main;
-        var currentState = new List<PairKey>();
+        var currentState = new HashSet<PairKey>();
 
         //監視対象グループからnullを破棄
         notUIs.RemoveAll(x => x == null);
@@ -99,36 +99,38 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
                 //重なりを検知した場合
                 if (strategy.Overlap(quad_nonUI, quad_UI))
                 {
-                    var key = new PairKey(nonUI, ui);
-                    currentState.Add(key);
-
-                    if (previousState.Contains(key) == false)
-                    {
-                        OnOverlapEnter?.Invoke(nonUI, ui);
-                    }
-                    else
-                    {
-                        OnOverlapStay?.Invoke(nonUI, ui);
-                    }
+                    currentState.Add(new PairKey(nonUI, ui));
                 }
             }
         }
 
-        //Exitイベント発行判定
-        foreach (var key in previousState)
+        //Enter判定
+        var entered = new HashSet<PairKey>(currentState);
+        entered.ExceptWith(previousState);
+        foreach (var key in entered)
         {
-            if (currentState.Contains(key) == false)
-            {
-                OnOverlapExit?.Invoke(key.c, key.r);
-            }
+            OnOverlapEnter?.Invoke(key.c, key.r);
+        }
+
+        //Stay判定
+        var stayed = new HashSet<PairKey>(currentState);
+        stayed.IntersectWith(previousState);
+        foreach (var key in stayed)
+        {
+            OnOverlapStay?.Invoke(key.c, key.r);
+        }
+
+        //Exit判定
+        var exited = new HashSet<PairKey>(previousState);
+        exited.ExceptWith(currentState);
+        foreach (var key in exited)
+        {
+            OnOverlapExit?.Invoke(key.c, key.r);
         }
 
         //重なり検知状態の記録
         previousState.Clear();
-        foreach (var k in currentState)
-        {
-            previousState.Add(k);
-        }
+        previousState.UnionWith(currentState);
     }
 
     private static Vector2[] CalcScreenQuad(Component obj, Canvas canvas, Camera cam)

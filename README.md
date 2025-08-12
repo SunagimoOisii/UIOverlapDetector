@@ -31,7 +31,7 @@ classDiagram
     class UISpriteOverlapDetector {
         + List notUIs
         + List UIs
-        - List previousState
+        - HashSet previousState
         - IOverlapStrategy strategy
 
         + event OnOverlapEnter
