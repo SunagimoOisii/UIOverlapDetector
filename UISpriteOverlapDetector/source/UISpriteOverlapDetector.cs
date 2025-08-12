@@ -37,6 +37,15 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     private readonly HashSet<PairKey> previousState = new();
     private IOverlapStrategy strategy;
 
+    // CalcScreenQuadで使用する一時配列
+    private static readonly Vector3[] worldCorners = new Vector3[4];
+    private static readonly Vector3[] localCorners = new Vector3[4];
+    private readonly Vector2[] quadNonUI = new Vector2[4];
+    private readonly Vector2[] quadUI    = new Vector2[4];
+#if UNITY_EDITOR
+    private readonly Vector2[] gizmoQuad = new Vector2[4];
+#endif
+
     #region 外部公開関数
     public void AddNotUI(Component comp)
     {
@@ -88,16 +97,14 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         //始めに各要素の矩形化(Vector2)を行う
         foreach (var nonUI in notUIs)
         {
-            Vector2[] quad_nonUI = CalcScreenQuad(nonUI, targetCanvas, cam);
-            if (quad_nonUI == null) continue;
+            if (CalcScreenQuad(nonUI, targetCanvas, cam, quadNonUI) == false) continue;
 
             foreach (var ui in UIs)
             {
-                Vector2[] quad_UI = CalcScreenQuad(ui, targetCanvas, cam);
-                if (quad_UI == null) continue;
+                if (CalcScreenQuad(ui, targetCanvas, cam, quadUI) == false) continue;
 
                 //重なりを検知した場合
-                if (strategy.Overlap(quad_nonUI, quad_UI))
+                if (strategy.Overlap(quadNonUI, quadUI))
                 {
                     currentState.Add(new PairKey(nonUI, ui));
                 }
@@ -120,10 +127,8 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         previousState.UnionWith(currentState);
     }
 
-    private static Vector2[] CalcScreenQuad(Component obj, Canvas canvas, Camera cam)
+    private static bool CalcScreenQuad(Component obj, Canvas canvas, Camera cam, Vector2[] screenPts)
     {
-        Vector3[] worldCorners = new Vector3[4];
-
         //ワールド空間上の四つ角の取得
         if (obj is RectTransform rt)
         {
@@ -133,19 +138,16 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         {
             var tf = sr.transform;
             var sprite = sr.sprite;
-            if (sprite == null) return null;
+            if (sprite == null) return false;
 
             var bounds = sprite.bounds;
             var ext    = bounds.extents;
 
             //ローカル空間のOBB四隅
-            Vector3[] localCorners = new Vector3[]
-            {
-                new(-ext.x, -ext.y, 0),
-                new( ext.x, -ext.y, 0),
-                new( ext.x,  ext.y, 0),
-                new(-ext.x,  ext.y, 0),
-            };
+            localCorners[0] = new(-ext.x, -ext.y, 0);
+            localCorners[1] = new( ext.x, -ext.y, 0);
+            localCorners[2] = new( ext.x,  ext.y, 0);
+            localCorners[3] = new(-ext.x,  ext.y, 0);
 
             for (int i = 0; i < 4; i++)
             {
@@ -154,17 +156,16 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
         else
         {
-            return null;
+            return false;
         }
 
         //四つ角をスクリーン上の座標に変換
-        Vector2[] screenPts = new Vector2[4];
         for (int i = 0; i < 4; i++)
         {
             if (obj is RectTransform)
             {
-                //CanvaModeで分岐
-                if(canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+                //CanvasModeで分岐
+                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
                 {
                     screenPts[i] = RectTransformUtility.WorldToScreenPoint(null, worldCorners[i]);
                 }
@@ -179,7 +180,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
                 screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
             }
         }
-        return screenPts;
+        return true;
     }
 
 #if UNITY_EDITOR
@@ -195,8 +196,10 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         {
             if (nonUI == null) continue;
 
-            var quad = CalcScreenQuad(nonUI, targetCanvas, cam);
-            if (quad != null) DrawQuadGizmo(quad, cam, strategy);
+            if (CalcScreenQuad(nonUI, targetCanvas, cam, gizmoQuad))
+            {
+                DrawQuadGizmo(gizmoQuad, cam, strategy);
+            }
         }
 
         Gizmos.color = Color.cyan;
@@ -204,8 +207,10 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         {
             if (ui == null) continue;
 
-            var quad = CalcScreenQuad(ui, targetCanvas, cam);
-            if (quad != null) DrawQuadGizmo(quad, cam, strategy);
+            if (CalcScreenQuad(ui, targetCanvas, cam, gizmoQuad))
+            {
+                DrawQuadGizmo(gizmoQuad, cam, strategy);
+            }
         }
     }
 
