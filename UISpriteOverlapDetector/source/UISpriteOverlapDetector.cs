@@ -104,29 +104,16 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             }
         }
 
-        //Enter判定
+        //Enter, Stay, Exit判定
         var entered = new HashSet<PairKey>(currentState);
+        var stayed  = new HashSet<PairKey>(currentState);
+        var exited  = new HashSet<PairKey>(previousState);
         entered.ExceptWith(previousState);
-        foreach (var key in entered)
-        {
-            OnOverlapEnter?.Invoke(key.c, key.r);
-        }
-
-        //Stay判定
-        var stayed = new HashSet<PairKey>(currentState);
         stayed.IntersectWith(previousState);
-        foreach (var key in stayed)
-        {
-            OnOverlapStay?.Invoke(key.c, key.r);
-        }
-
-        //Exit判定
-        var exited = new HashSet<PairKey>(previousState);
         exited.ExceptWith(currentState);
-        foreach (var key in exited)
-        {
-            OnOverlapExit?.Invoke(key.c, key.r);
-        }
+        foreach (var key in entered) OnOverlapEnter?.Invoke(key.c, key.r);
+        foreach (var key in stayed) OnOverlapStay?.Invoke(key.c, key.r);
+        foreach (var key in exited) OnOverlapExit?.Invoke(key.c, key.r);
 
         //重なり検知状態の記録
         previousState.Clear();
