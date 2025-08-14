@@ -104,7 +104,9 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
         for (int i = notUIs.Count - 1; i >= 0; i--)
         {
-            if (notUIs[i] is not SpriteRenderer && notUIs[i] is not Collider2D)
+            if (notUIs[i] is not SpriteRenderer && 
+                notUIs[i] is not LineRenderer &&
+                notUIs[i] is not Collider2D)
             {
                 Debug.LogWarning($"非UIリストに対応外コンポーネントが含まれています: {notUIs[i].name}", this);
                 notUIs.RemoveAt(i);
