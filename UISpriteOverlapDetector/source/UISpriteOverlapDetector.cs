@@ -130,15 +130,16 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     private void LateUpdate()
     {
         var cam = (targetCamera != null) ? targetCamera : Camera.main;
+        var projector = new CameraScreenProjector(cam);
 
-        CalculateCurrentState(cam);
+        CalculateCurrentState(projector);
         DispatchEvents();
     }
 
     /// <summary>
     /// 監視対象の矩形化と重なり判定を行い、現在の重なり状態を計算する
     /// </summary>
-    private void CalculateCurrentState(Camera cam)
+    private void CalculateCurrentState(IScreenProjector projector)
     {
         currentState.Clear();
 
@@ -150,11 +151,11 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         //始めに各要素の矩形化(Vector2)を行う
         foreach (var nonUI in notUIs)
         {
-            if (CalcScreenQuad(nonUI, targetCanvas, cam, quadNonUI) == false) continue;
+            if (CalcScreenQuad(nonUI, targetCanvas, projector, quadNonUI) == false) continue;
 
             foreach (var ui in UIs)
             {
-                if (CalcScreenQuad(ui, targetCanvas, cam, quadUI) == false) continue;
+                if (CalcScreenQuad(ui, targetCanvas, projector, quadUI) == false) continue;
 
                 //重なりを検知した場合
                 if (strategy.Overlap(quadNonUI, quadUI))
@@ -197,7 +198,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         return true;
     }
 
-    private static bool CalcScreenQuad(Component obj, Canvas canvas, Camera cam, Vector2[] screenPts)
+    private static bool CalcScreenQuad(Component obj, Canvas canvas, IScreenProjector projector, Vector2[] screenPts)
     {
         if (obj is RectTransform rt)
         {
@@ -211,7 +212,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
                 }
                 else
                 {
-                    screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
+                    screenPts[i] = projector.WorldToScreen(worldCorners[i]);
                 }
             }
             return true;
@@ -221,7 +222,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
         for (int i = 0; i < 4; i++)
         {
-            screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
+            screenPts[i] = projector.WorldToScreen(worldCorners[i]);
         }
         return true;
     }
@@ -233,13 +234,14 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
         var cam = (targetCamera != null) ? targetCamera : Camera.main;
         if (cam == null) return;
+        var projector = new CameraScreenProjector(cam);
 
         Gizmos.color = Color.yellow;
         foreach (var nonUI in notUIs)
         {
             if (nonUI == null) continue;
 
-            if (CalcScreenQuad(nonUI, targetCanvas, cam, gizmoQuad))
+            if (CalcScreenQuad(nonUI, targetCanvas, projector, gizmoQuad))
             {
                 DrawQuadGizmo(gizmoQuad, cam, strategy);
             }
@@ -250,7 +252,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         {
             if (ui == null) continue;
 
-            if (CalcScreenQuad(ui, targetCanvas, cam, gizmoQuad))
+            if (CalcScreenQuad(ui, targetCanvas, projector, gizmoQuad))
             {
                 DrawQuadGizmo(gizmoQuad, cam, strategy);
             }
