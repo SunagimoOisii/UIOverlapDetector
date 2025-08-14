@@ -2,6 +2,6 @@ using UnityEngine;
 
 public interface IOverlapStrategy
 {
-    //OBB‘Î‰‚Ì‚½‚ßRect‚Å‚Í‚È‚­Vector2‚ğg—p(Rect‚Í‰ñ“]‚µ‚È‚¢‚½‚ß)
+    // OBB ã‚„ Rect å‹ã§ã¯ãªãã€å››éš…ã® Vector2 é…åˆ—ã‚’å—ã‘å–ã‚‹
     bool Overlap(Vector2[] a, Vector2[] b);
 }
