@@ -4,8 +4,8 @@
 
 # UIOverlapDetector
 
-- Unity2D 用のスクリプト群で、`RectTransform` を持つ UI と `SpriteRenderer` や `LineRenderer`、`Collider2D` などの非 UI の重なりを検出する
-- 現在は 2D コンポーネントのみをサポートし、3D 対応は今後の予定
+- Unity2D 用のスクリプト群で、`RectTransform` を持つ UI と `SpriteRenderer` や `LineRenderer`、`MeshRenderer`、`Collider` などの非 UI の重なりを検出する
+- 一部 3D コンポーネントにも対応
 - 対象同士が重なった瞬間、重なっている間、離れた瞬間をそれぞれイベントとして受け取り、UI の半透明化や当たり判定の補助などに利用できる
 
 ## 使用例
@@ -14,14 +14,14 @@
 - Enter, Exit イベントで UI の透明度を操作している
 
 ## 機能
-- 任意の `RectTransform` と `SpriteRenderer`、`LineRenderer`、`Collider2D` を登録して画面上での重なりを監視
+- 任意の `RectTransform` と `SpriteRenderer`、`LineRenderer`、`MeshRenderer`、`Collider` を登録して画面上での重なりを監視
 - 対応外コンポーネントを登録しようとすると警告ログを出力
 - 重なりの状態に応じて `OnOverlapEnter`、`OnOverlapStay`、`OnOverlapExit` を発火
 - 判定アルゴリズムを `IOverlapStrategy` で差し替え可能
   - 軸整列矩形を用いる `AABBStrategy`
   - 傾きを考慮する `SATStrategy`
-- 非 UI コンポーネントの矩形化は `IQuadProvider` で拡張可能
-  - 標準で `SpriteRenderer`、`LineRenderer`、`Collider2D` 用を内蔵
+- 非 UI コンポーネントの境界取得は `IBoundsProvider` で拡張可能
+  - 標準で `SpriteRenderer`、`LineRenderer`、`MeshRenderer`、`Collider` 用を内蔵
 - `IncludeRotated` オプションで自動的に判定方法を切り替え
 - Gizmos による確認用のデバッグ描画
 
@@ -41,23 +41,25 @@ classDiagram
     IOverlapStrategy <|.. AABBStrategy
     IOverlapStrategy <|.. SATStrategy
 
-    class IQuadProvider {
+    class IBoundsProvider {
         <<interface>>
         + int Priority
-        + bool TryGetWorldQuad(Component, Vector3[])
+        + bool TryGetWorldBounds(Component, Vector3[])
     }
 
-    class SpriteRendererQuadProvider
-    class LineRendererQuadProvider
-    class Collider2DQuadProvider
+    class SpriteRendererBoundsProvider
+    class LineRendererBoundsProvider
+    class MeshRendererBoundsProvider
+    class ColliderBoundsProvider
 
-    IQuadProvider <|.. SpriteRendererQuadProvider
-    IQuadProvider <|.. LineRendererQuadProvider
-    IQuadProvider <|.. Collider2DQuadProvider
+    IBoundsProvider <|.. SpriteRendererBoundsProvider
+    IBoundsProvider <|.. LineRendererBoundsProvider
+    IBoundsProvider <|.. MeshRendererBoundsProvider
+    IBoundsProvider <|.. ColliderBoundsProvider
 
     class QuadProviderRegistry {
-        + static void Register(IQuadProvider)
-        + static bool TryGetWorldQuad(Component, Vector3[])
+        + static void Register(IBoundsProvider)
+        + static bool TryGetWorldBounds(Component, Vector3[])
     }
 
     class UISpriteOverlapDetector {
@@ -78,7 +80,7 @@ classDiagram
 
     UISpriteOverlapDetector o-- IOverlapStrategy
     UISpriteOverlapDetector o-- QuadProviderRegistry
-    QuadProviderRegistry o-- IQuadProvider
+    QuadProviderRegistry o-- IBoundsProvider
     UISpriteOverlapDetector "1" --> "*" Component
     UISpriteOverlapDetector "1" --> "*" RectTransform
 ```
@@ -122,22 +124,22 @@ public class Sample : MonoBehaviour
 ```
 
 ## 拡張
-- `IQuadProvider` を実装することで独自コンポーネントにも対応可能
+- `IBoundsProvider` を実装することで独自コンポーネントにも対応可能
 ```csharp
-public sealed class CustomQuadProvider : IQuadProvider
+public sealed class CustomBoundsProvider : IBoundsProvider
 {
     public int Priority => 50;
 
-    public bool TryGetWorldQuad(Component c, Vector3[] worldCorners)
+    public bool TryGetWorldBounds(Component c, Vector3[] worldCorners)
     {
         if (c is not MyComponent comp) return false;
-        // worldCorners に四隅を格納
+        // worldCorners に8頂点を格納
         return true;
     }
 }
 
 // アプリ起動時などに登録
-QuadProviderRegistry.Register(new CustomQuadProvider());
+QuadProviderRegistry.Register(new CustomBoundsProvider());
 ```
 
 ## 必要環境

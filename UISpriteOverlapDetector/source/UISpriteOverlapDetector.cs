@@ -51,7 +51,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     private IOverlapStrategy strategy;
 
     //CalcScreenQuadで使用する一時配列
-    private static readonly Vector3[] worldCorners = new Vector3[4];
+    private static readonly Vector3[] worldCorners = new Vector3[8];
     private readonly List<Vector2> quadNonUI = new(4);
     private readonly List<Vector2> quadUI    = new(4);
 #if UNITY_EDITOR
@@ -69,6 +69,8 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
         if (comp is not SpriteRenderer &&
             comp is not LineRenderer &&
+            comp is not MeshRenderer &&
+            comp is not Collider &&
             comp is not Collider2D)
         {
             Debug.LogWarning($"{comp.GetType().Name}は非UIリストに追加できません", this);
@@ -219,12 +221,26 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             return true;
         }
 
-        if (QuadProviderRegistry.TryGetWorldQuad(obj, worldCorners) == false) return false;
+        if (QuadProviderRegistry.TryGetWorldBounds(obj, worldCorners) == false) return false;
 
-        for (int i = 0; i < 4; i++)
+        float minX = float.MaxValue;
+        float minY = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxY = float.MinValue;
+
+        for (int i = 0; i < 8; i++)
         {
-            screenPts.Add(projector.WorldToScreen(worldCorners[i]));
+            var sp = projector.WorldToScreen(worldCorners[i]);
+            if (sp.x < minX) minX = sp.x;
+            if (sp.y < minY) minY = sp.y;
+            if (sp.x > maxX) maxX = sp.x;
+            if (sp.y > maxY) maxY = sp.y;
         }
+
+        screenPts.Add(new Vector2(minX, minY));
+        screenPts.Add(new Vector2(maxX, minY));
+        screenPts.Add(new Vector2(maxX, maxY));
+        screenPts.Add(new Vector2(minX, maxY));
         return true;
     }
 
