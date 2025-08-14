@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// UI(RectTransform)とSpriteRendererのスクリーン上での重なりを検出するクラス
+/// UI(RectTransform)と非UI(Renderer/Collider2D等)のスクリーン上での重なりを検出するクラス
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class UISpriteOverlapDetector : MonoBehaviour
@@ -52,7 +52,6 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
     //CalcScreenQuadで使用する一時配列
     private static readonly Vector3[] worldCorners = new Vector3[4];
-    private static readonly Vector3[] localCorners = new Vector3[4];
     private readonly Vector2[] quadNonUI = new Vector2[4];
     private readonly Vector2[] quadUI    = new Vector2[4];
 #if UNITY_EDITOR
@@ -63,7 +62,11 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     public void AddNotUI(Component comp)
     {
         if (comp == null) return;
-        if (comp is not SpriteRenderer) return;
+        if (comp is RectTransform)
+        {
+            Debug.LogWarning("RectTransformは非UIリストに追加できません", this);
+            return;
+        }
         if (notUIs.Contains(comp)) return;
 
         notUIs.Add(comp);
@@ -91,6 +94,14 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         if (targetCanvas == null)
         {
             targetCanvas = GetComponentInParent<Canvas>();
+        }
+        for (int i = notUIs.Count - 1; i >= 0; i--)
+        {
+            if (notUIs[i] is RectTransform)
+            {
+                Debug.LogWarning($"非UIリストにRectTransformが含まれています: {notUIs[i].name}", this);
+                notUIs.RemoveAt(i);
+            }
         }
 
         strategy = includeRotated ? new SATStrategy() : new AABBStrategy();
@@ -177,52 +188,14 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         return true;
     }
 
-    private static bool TryGetWorldCorners(SpriteRenderer sr, Vector3[] worldCorners,
-        Vector3[] localCorners)
-    {
-        if (sr == null) return false;
-
-        var sprite = sr.sprite;
-        if (sprite == null) return false;
-
-        var bounds = sprite.bounds;
-        var ext    = bounds.extents;
-
-        //ローカル空間のOBB四隅
-        localCorners[0] = new(-ext.x, -ext.y, 0);
-        localCorners[1] = new( ext.x, -ext.y, 0);
-        localCorners[2] = new( ext.x,  ext.y, 0);
-        localCorners[3] = new(-ext.x,  ext.y, 0);
-
-        var tf = sr.transform;
-        for (int i = 0; i < 4; i++)
-        {
-            worldCorners[i] = tf.TransformPoint(localCorners[i]);
-        }
-        return true;
-    }
-
     private static bool CalcScreenQuad(Component obj, Canvas canvas, Camera cam, Vector2[] screenPts)
     {
-        bool isUI;
         if (obj is RectTransform rt)
         {
             if (TryGetWorldCorners(rt, worldCorners) == false) return false;
-            isUI = true;
-        }
-        else if (obj is SpriteRenderer sr)
-        {
-            if (TryGetWorldCorners(sr, worldCorners, localCorners) == false) return false;
-            isUI = false;
-        }
-        else return false;
 
-        //四つ角をスクリーン上の座標に変換
-        for (int i = 0; i < 4; i++)
-        {
-            if (isUI)
+            for (int i = 0; i < 4; i++)
             {
-                //CanvasModeで分岐
                 if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
                 {
                     screenPts[i] = RectTransformUtility.WorldToScreenPoint(null, worldCorners[i]);
@@ -232,10 +205,14 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
                     screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
                 }
             }
-            else //非UIは常にCameraベースで変換
-            {
-                screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
-            }
+            return true;
+        }
+
+        if (QuadProviderRegistry.TryGetWorldQuad(obj, worldCorners) == false) return false;
+
+        for (int i = 0; i < 4; i++)
+        {
+            screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
         }
         return true;
     }
