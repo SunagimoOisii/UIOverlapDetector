@@ -137,32 +137,51 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         previousState.UnionWith(currentState);
     }
 
+    private static bool TryGetWorldCorners(RectTransform rt, Vector3[] worldCorners)
+    {
+        if (rt == null) return false;
+
+        rt.GetWorldCorners(worldCorners);
+        return true;
+    }
+
+    private static bool TryGetWorldCorners(
+        SpriteRenderer sr, Vector3[] worldCorners, Vector3[] localCorners)
+    {
+        if (sr == null) return false;
+
+        var sprite = sr.sprite;
+        if (sprite == null) return false;
+
+        var bounds = sprite.bounds;
+        var ext    = bounds.extents;
+
+        //ローカル空間のOBB四隅
+        localCorners[0] = new(-ext.x, -ext.y, 0);
+        localCorners[1] = new( ext.x, -ext.y, 0);
+        localCorners[2] = new( ext.x,  ext.y, 0);
+        localCorners[3] = new(-ext.x,  ext.y, 0);
+
+        var tf = sr.transform;
+        for (int i = 0; i < 4; i++)
+        {
+            worldCorners[i] = tf.TransformPoint(localCorners[i]);
+        }
+        return true;
+    }
+
     private static bool CalcScreenQuad(Component obj, Canvas canvas, Camera cam, Vector2[] screenPts)
     {
-        //ワールド空間上の四つ角の取得
+        bool isUI;
         if (obj is RectTransform rt)
         {
-            rt.GetWorldCorners(worldCorners);
+            if (TryGetWorldCorners(rt, worldCorners) == false) return false;
+            isUI = true;
         }
         else if (obj is SpriteRenderer sr)
         {
-            var tf = sr.transform;
-            var sprite = sr.sprite;
-            if (sprite == null) return false;
-
-            var bounds = sprite.bounds;
-            var ext    = bounds.extents;
-
-            //ローカル空間のOBB四隅
-            localCorners[0] = new(-ext.x, -ext.y, 0);
-            localCorners[1] = new( ext.x, -ext.y, 0);
-            localCorners[2] = new( ext.x,  ext.y, 0);
-            localCorners[3] = new(-ext.x,  ext.y, 0);
-
-            for (int i = 0; i < 4; i++)
-            {
-                worldCorners[i] = tf.TransformPoint(localCorners[i]);
-            }
+            if (TryGetWorldCorners(sr, worldCorners, localCorners) == false) return false;
+            isUI = false;
         }
         else
         {
@@ -172,7 +191,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         //四つ角をスクリーン上の座標に変換
         for (int i = 0; i < 4; i++)
         {
-            if (obj is RectTransform)
+            if (isUI)
             {
                 //CanvasModeで分岐
                 if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
