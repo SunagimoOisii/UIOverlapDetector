@@ -4,10 +4,10 @@ public sealed class SATStrategy : IOverlapStrategy
 {
     public bool Overlap(Vector2[] a, Vector2[] b)
     {
-        //•ª—£²”»’è
+        // åˆ†é›¢è»¸å®šç†ã«ã‚ˆã‚‹é‡ãªã‚Šåˆ¤å®š
         for (int i = 0; i < 4; ++i)
         {
-            //Še•ÓƒxƒNƒgƒ‹‚ğŒvZ‚µA‚»‚Ì•ûŒü‚É³‹K‰»
+            // å„è¾ºã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã‚’æ­£è¦åŒ–ã—ã¦åˆ†é›¢è»¸ã‚’å–å¾—
             Vector2 axis;
             if (i < 2)
             {
@@ -18,7 +18,7 @@ public sealed class SATStrategy : IOverlapStrategy
                 axis = (b[(i - 2 + 1) % 4] - b[i - 2]).normalized;
             }
 
-            //1‚Â‚Å‚à•ª—£²‚Ö‚Ì“Š‰e‚Éd‚È‚è‚ª‚È‚¯‚ê‚ÎÕ“Ë‚µ‚Ä‚¢‚È‚¢
+            // 1 æœ¬ã§ã‚‚æŠ•å½±ãŒé‡ãªã‚‰ãªã„è»¸ãŒã‚ã‚Œã°åˆ†é›¢ã—ã¦ã„ã‚‹
             if (IsOverlapOnAxis(a, b, axis) == false)
             {
                 return false;
