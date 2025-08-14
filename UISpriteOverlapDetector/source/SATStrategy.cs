@@ -9,7 +9,7 @@ public sealed class SATStrategy : IOverlapStrategy
         for (int i = 0; i < a.Count; ++i)
         {
             Vector2 edge = a[(i + 1) % a.Count] - a[i];
-            Vector2 axis = new(-edge.y, edge.x).normalized;
+            Vector2 axis = new Vector2(-edge.y, edge.x).normalized;
             if (IsOverlapOnAxis(a, b, axis) == false)
             {
                 return false;
@@ -18,7 +18,7 @@ public sealed class SATStrategy : IOverlapStrategy
         for (int i = 0; i < b.Count; ++i)
         {
             Vector2 edge = b[(i + 1) % b.Count] - b[i];
-            Vector2 axis = new(-edge.y, edge.x).normalized;
+            Vector2 axis = new Vector2(-edge.y, edge.x).normalized;
             if (IsOverlapOnAxis(a, b, axis) == false)
             {
                 return false;
