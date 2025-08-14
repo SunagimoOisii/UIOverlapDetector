@@ -3,14 +3,14 @@ using UnityEngine;
 
 public sealed class AABBStrategy : IOverlapStrategy
 {
-    public bool Overlap(IReadOnlyList<Vector3> a, IReadOnlyList<Vector3> b)
+    public bool Overlap(IReadOnlyList<Vector2> a, IReadOnlyList<Vector2> b)
     {
         Rect ra = CalcBoundingRect(a);
         Rect rb = CalcBoundingRect(b);
         return ra.Overlaps(rb);
     }
 
-    private static Rect CalcBoundingRect(IReadOnlyList<Vector3> points)
+    private static Rect CalcBoundingRect(IReadOnlyList<Vector2> points)
     {
         float minX = points[0].x, minY = points[0].y;
         float maxX = points[0].x, maxY = points[0].y;
