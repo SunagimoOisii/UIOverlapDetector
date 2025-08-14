@@ -53,11 +53,11 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     #region 外部公開関数
     public void AddNotUI(Component comp)
     {
-        if (comp is SpriteRenderer && 
-            notUIs.Contains(comp) == false)
-        {
-            notUIs.Add(comp);
-        }
+        if (comp == null) return;
+        if (comp is not SpriteRenderer) return;
+        if (notUIs.Contains(comp)) return;
+
+        notUIs.Add(comp);
     }
     public void RemoveNotUI(Component comp)
     {
@@ -66,11 +66,10 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
     public void AddUI(RectTransform rt)
     {
-        if (rt &&
-            UIs.Contains(rt) == false)
-        {
-            UIs.Add(rt);
-        }
+        if (rt == null) return;
+        if (UIs.Contains(rt)) return;
+
+        UIs.Add(rt);
     }
     public void RemoveUI(RectTransform rt)
     {
