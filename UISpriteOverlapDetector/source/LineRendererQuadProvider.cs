@@ -1,13 +1,13 @@
 using UnityEngine;
 
 /// <summary>
-/// LineRenderer 専用の BoundsProvider
+/// LineRenderer専用のQuadProvider
 /// </summary>
-public sealed class LineRendererBoundsProvider : IBoundsProvider
+public sealed class LineRendererQuadProvider : IQuadProvider
 {
     public int Priority => 150;
 
-    public bool TryGetWorldBounds(Component c, Vector3[] worldCorners)
+    public bool TryGetWorldQuad(Component c, Vector3[] worldCorners)
     {
         if (c is not LineRenderer lr) return false;
         if (lr.positionCount < 2) return false;
@@ -31,10 +31,6 @@ public sealed class LineRendererBoundsProvider : IBoundsProvider
         worldCorners[1] = start - normal;
         worldCorners[2] = end   - normal;
         worldCorners[3] = end   + normal;
-        worldCorners[4] = worldCorners[0];
-        worldCorners[5] = worldCorners[1];
-        worldCorners[6] = worldCorners[2];
-        worldCorners[7] = worldCorners[3];
         return true;
     }
 }
