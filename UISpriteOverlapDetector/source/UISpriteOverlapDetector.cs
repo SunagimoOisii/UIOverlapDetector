@@ -67,7 +67,9 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             Debug.LogWarning("RectTransformは非UIリストに追加できません", this);
             return;
         }
-        if (comp is not SpriteRenderer && comp is not Collider2D)
+        if (comp is not SpriteRenderer &&
+            comp is not LineRenderer &&
+            comp is not Collider2D)
         {
             Debug.LogWarning($"{comp.GetType().Name}は非UIリストに追加できません", this);
             return;
