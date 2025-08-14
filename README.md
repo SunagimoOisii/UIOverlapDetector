@@ -23,7 +23,6 @@
 - 非 UI コンポーネントの境界取得は `IBoundsProvider` で拡張可能
   - 標準で `SpriteRenderer`、`LineRenderer`、`MeshRenderer`、`Collider` 用を内蔵
 - `IncludeRotated` オプションで自動的に判定方法を切り替え
-- 奥行きを考慮するかを `useDepthCheck` で切り替え可能
 - Gizmos による確認用のデバッグ描画
 
 ## クラス図
@@ -33,7 +32,7 @@ classDiagram
     
     class IOverlapStrategy {
         <<interface>>
-        + bool Overlap(IReadOnlyList<Vector3> a, IReadOnlyList<Vector3> b)
+        + bool Overlap(IReadOnlyList<Vector2> a, IReadOnlyList<Vector2> b)
     }
 
     class AABBStrategy
@@ -69,7 +68,6 @@ classDiagram
         - HashSet previousState
         - IOverlapStrategy strategy
         + bool IncludeRotated
-        + bool useDepthCheck
 
         + event OnOverlapEnter
         + event OnOverlapStay
