@@ -1,4 +1,4 @@
-# UISpriteOverlapDetector
+# UIOverlapDetector
 
 - Unity2D 用のスクリプト群で、`RectTransform` を持つ UI と `SpriteRenderer` や `Collider2D` などの非 UI の重なりを検出する
 - 現在は 2D コンポーネントのみをサポートし、3D 対応は今後の予定
