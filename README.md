@@ -32,7 +32,7 @@ classDiagram
     
     class IOverlapStrategy {
         <<interface>>
-        + bool Overlap(Vector2[] a, Vector2[] b)
+        + bool Overlap(IReadOnlyList<Vector2> a, IReadOnlyList<Vector2> b)
     }
 
     class AABBStrategy

@@ -52,10 +52,10 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
     //CalcScreenQuadで使用する一時配列
     private static readonly Vector3[] worldCorners = new Vector3[4];
-    private readonly Vector2[] quadNonUI = new Vector2[4];
-    private readonly Vector2[] quadUI    = new Vector2[4];
+    private readonly List<Vector2> quadNonUI = new(4);
+    private readonly List<Vector2> quadUI    = new(4);
 #if UNITY_EDITOR
-    private readonly Vector2[] gizmoQuad = new Vector2[4];
+    private readonly List<Vector2> gizmoQuad = new(4);
 #endif
 
     #region 外部公開関数
@@ -198,8 +198,9 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         return true;
     }
 
-    private static bool CalcScreenQuad(Component obj, Canvas canvas, IScreenProjector projector, Vector2[] screenPts)
+    private static bool CalcScreenQuad(Component obj, Canvas canvas, IScreenProjector projector, List<Vector2> screenPts)
     {
+        screenPts.Clear();
         if (obj is RectTransform rt)
         {
             if (TryGetWorldCorners(rt, worldCorners) == false) return false;
@@ -208,11 +209,11 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             {
                 if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
                 {
-                    screenPts[i] = RectTransformUtility.WorldToScreenPoint(null, worldCorners[i]);
+                    screenPts.Add(RectTransformUtility.WorldToScreenPoint(null, worldCorners[i]));
                 }
                 else
                 {
-                    screenPts[i] = projector.WorldToScreen(worldCorners[i]);
+                    screenPts.Add(projector.WorldToScreen(worldCorners[i]));
                 }
             }
             return true;
@@ -222,7 +223,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
         for (int i = 0; i < 4; i++)
         {
-            screenPts[i] = projector.WorldToScreen(worldCorners[i]);
+            screenPts.Add(projector.WorldToScreen(worldCorners[i]));
         }
         return true;
     }
@@ -259,7 +260,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
     }
 
-    private static void DrawQuadGizmo(Vector2[] quad, Camera cam, IOverlapStrategy s)
+    private static void DrawQuadGizmo(IReadOnlyList<Vector2> quad, Camera cam, IOverlapStrategy s)
     {
         if (s is AABBStrategy)
         {
@@ -282,12 +283,12 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
         else
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < quad.Count; i++)
             {
                 Vector3 a = cam.ScreenToWorldPoint(
                     new(quad[i].x, quad[i].y, cam.nearClipPlane));
                 Vector3 b = cam.ScreenToWorldPoint(
-                    new(quad[(i + 1) % 4].x, quad[(i + 1) % 4].y, cam.nearClipPlane));
+                    new(quad[(i + 1) % quad.Count].x, quad[(i + 1) % quad.Count].y, cam.nearClipPlane));
                 Gizmos.DrawLine(a, b);
             }
         }
