@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// UI(RectTransform)と非UI(Renderer/Collider)のスクリーン上での重なりを検出するクラス
+/// UI(RectTransform)と非UI(SpriteRenderer/Collider2D)のスクリーン上での重なりを検出するクラス
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class UISpriteOverlapDetector : MonoBehaviour
@@ -67,15 +67,14 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             Debug.LogWarning("RectTransformは非UIリストに追加できません", this);
             return;
         }
-        switch (comp)
+        if (comp is not SpriteRenderer &&
+            comp is not LineRenderer &&
+            comp is not MeshRenderer &&
+            comp is not Collider &&
+            comp is not Collider2D)
         {
-            case Renderer:
-            case Collider:
-            case Collider2D:
-                break;
-            default:
-                Debug.LogWarning($"{comp.GetType().Name}は非UIリストに追加できません", this);
-                return;
+            Debug.LogWarning($"{comp.GetType().Name}は非UIリストに追加できません", this);
+            return;
         }
         if (notUIs.Contains(comp)) return;
 
@@ -107,16 +106,12 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
         for (int i = notUIs.Count - 1; i >= 0; i--)
         {
-            switch (notUIs[i])
+            if (notUIs[i] is not SpriteRenderer && 
+                notUIs[i] is not LineRenderer &&
+                notUIs[i] is not Collider2D)
             {
-                case Renderer:
-                case Collider:
-                case Collider2D:
-                    break;
-                default:
-                    Debug.LogWarning($"非UIリストに対応外コンポーネントが含まれています: {notUIs[i].name}", this);
-                    notUIs.RemoveAt(i);
-                    break;
+                Debug.LogWarning($"非UIリストに対応外コンポーネントが含まれています: {notUIs[i].name}", this);
+                notUIs.RemoveAt(i);
             }
         }
 
