@@ -20,6 +20,17 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     [SerializeField] private bool visualizeGizmos = true;
     [SerializeField] private bool includeRotated  = false;
     private bool includeRotatedState;
+    public bool IncludeRotated
+    {
+        get => includeRotated;
+        set
+        {
+            if (includeRotatedState == value) return;
+            includeRotated      = value;
+            includeRotatedState = value;
+            strategy = includeRotated ? new SATStrategy() : new AABBStrategy();
+        }
+    }
 
     public event Action<Component, RectTransform> OnOverlapEnter;
     public event Action<Component, RectTransform> OnOverlapStay;
@@ -27,13 +38,12 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
     private readonly struct PairKey : IEquatable<PairKey>
     {
-        public readonly Component c;
-        public readonly RectTransform r;
-
         public PairKey(Component c, RectTransform r) { this.c = c; this.r = r; }
-
         public bool Equals(PairKey other) => c == other.c && r == other.r;
         public override int GetHashCode() => HashCode.Combine(c, r);
+
+        public readonly Component c;
+        public readonly RectTransform r;
     }
     private readonly HashSet<PairKey> previousState = new();
     private HashSet<PairKey> currentState;
@@ -42,7 +52,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     private HashSet<PairKey> exited;
     private IOverlapStrategy strategy;
 
-    // CalcScreenQuadで使用する一時配列
+    //CalcScreenQuadで使用する一時配列
     private static readonly Vector3[] worldCorners = new Vector3[4];
     private static readonly Vector3[] localCorners = new Vector3[4];
     private readonly Vector2[] quadNonUI = new Vector2[4];
@@ -93,18 +103,6 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         exited       = new HashSet<PairKey>();
     }
 
-    public bool IncludeRotated
-    {
-        get => includeRotated;
-        set
-        {
-            if (includeRotatedState == value) return;
-            includeRotated = value;
-            includeRotatedState = value;
-            strategy = includeRotated ? new SATStrategy() : new AABBStrategy();
-        }
-    }
-
 #if UNITY_EDITOR
     private void OnValidate()
     {
@@ -141,17 +139,17 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
         //Enter, Stay, Exit判定
         entered.Clear();
-        entered.UnionWith(currentState);
         stayed.Clear();
-        stayed.UnionWith(currentState);
         exited.Clear();
+        entered.UnionWith(currentState);
+        stayed.UnionWith(currentState);
         exited.UnionWith(previousState);
         entered.ExceptWith(previousState);
         stayed.IntersectWith(previousState);
         exited.ExceptWith(currentState);
         foreach (var key in entered) OnOverlapEnter?.Invoke(key.c, key.r);
-        foreach (var key in stayed) OnOverlapStay?.Invoke(key.c, key.r);
-        foreach (var key in exited) OnOverlapExit?.Invoke(key.c, key.r);
+        foreach (var key in stayed)  OnOverlapStay?.Invoke(key.c, key.r);
+        foreach (var key in exited)  OnOverlapExit?.Invoke(key.c, key.r);
 
         //重なり検知状態の記録
         previousState.Clear();
@@ -166,8 +164,8 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         return true;
     }
 
-    private static bool TryGetWorldCorners(
-        SpriteRenderer sr, Vector3[] worldCorners, Vector3[] localCorners)
+    private static bool TryGetWorldCorners(SpriteRenderer sr, Vector3[] worldCorners,
+        Vector3[] localCorners)
     {
         if (sr == null) return false;
 
@@ -204,10 +202,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             if (TryGetWorldCorners(sr, worldCorners, localCorners) == false) return false;
             isUI = false;
         }
-        else
-        {
-            return false;
-        }
+        else return false;
 
         //四つ角をスクリーン上の座標に変換
         for (int i = 0; i < 4; i++)
@@ -224,9 +219,8 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
                     screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
                 }
             }
-            else
+            else //非UIは常にCameraベースで変換
             {
-                //非UIは常にCameraベースで変換
                 screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
             }
         }
@@ -264,10 +258,9 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
     }
 
-    private static void DrawQuadGizmo(
-    Vector2[] quad, Camera cam, IOverlapStrategy strategy)
+    private static void DrawQuadGizmo(Vector2[] quad, Camera cam, IOverlapStrategy s)
     {
-        if (strategy is AABBStrategy)
+        if (s is AABBStrategy)
         {
             //AABBを求めて軸整列の矩形を描く
             float minX = quad[0].x, minY = quad[0].y,
