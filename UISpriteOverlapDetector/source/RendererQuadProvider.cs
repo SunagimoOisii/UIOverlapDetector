@@ -15,11 +15,13 @@ public sealed class RendererQuadProvider : IQuadProvider
 
         var bounds = r.localBounds;
         var ext    = bounds.extents;
+        var center = bounds.center;
 
-        localCorners[0] = new(-ext.x, -ext.y, 0);
-        localCorners[1] = new( ext.x, -ext.y, 0);
-        localCorners[2] = new( ext.x,  ext.y, 0);
-        localCorners[3] = new(-ext.x,  ext.y, 0);
+        // localBoundsの中心が原点からずれている場合に対応する
+        localCorners[0] = new(center.x - ext.x, center.y - ext.y, center.z);
+        localCorners[1] = new(center.x + ext.x, center.y - ext.y, center.z);
+        localCorners[2] = new(center.x + ext.x, center.y + ext.y, center.z);
+        localCorners[3] = new(center.x - ext.x, center.y + ext.y, center.z);
 
         var tf = r.transform;
         for (int i = 0; i < 4; i++)
