@@ -1,3 +1,7 @@
+<img width="197" height="57" alt="Image" src="https://github.com/user-attachments/assets/febfd6c9-303f-4ecb-81e7-dc475060a4fa" />
+
+よろしければ、Star お願いします！
+
 # UIOverlapDetector
 
 - Unity2D 用のスクリプト群で、`RectTransform` を持つ UI と `SpriteRenderer` や `Collider2D` などの非 UI の重なりを検出する
