@@ -19,15 +19,13 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     [Header("オプション")]
     [SerializeField] private bool visualizeGizmos = true;
     [SerializeField] private bool includeRotated  = false;
-    private bool includeRotatedState;
     public bool IncludeRotated
     {
         get => includeRotated;
         set
         {
-            if (includeRotatedState == value) return;
-            includeRotated      = value;
-            includeRotatedState = value;
+            if (includeRotated == value) return;
+            includeRotated = value;
             strategy = includeRotated ? new SATStrategy() : new AABBStrategy();
         }
     }
@@ -95,8 +93,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             targetCanvas = GetComponentInParent<Canvas>();
         }
 
-        includeRotatedState = includeRotated;
-        strategy     = includeRotated ? new SATStrategy() : new AABBStrategy();
+        strategy = includeRotated ? new SATStrategy() : new AABBStrategy();
         currentState = new HashSet<PairKey>();
         entered      = new HashSet<PairKey>();
         stayed       = new HashSet<PairKey>();
@@ -106,7 +103,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        IncludeRotated = includeRotated;
+        strategy = includeRotated ? new SATStrategy() : new AABBStrategy();
     }
 #endif
 
