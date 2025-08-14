@@ -52,10 +52,10 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
     //CalcScreenQuadで使用する一時配列
     private static readonly Vector3[] worldCorners = new Vector3[4];
-    private readonly List<Vector2> quadNonUI = new(4);
-    private readonly List<Vector2> quadUI    = new(4);
+    private readonly Vector2[] quadNonUI = new Vector2[4];
+    private readonly Vector2[] quadUI    = new Vector2[4];
 #if UNITY_EDITOR
-    private readonly List<Vector2> gizmoQuad = new(4);
+    private readonly Vector2[] gizmoQuad = new Vector2[4];
 #endif
 
     #region 外部公開関数
@@ -130,16 +130,14 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     private void LateUpdate()
     {
         var cam = (targetCamera != null) ? targetCamera : Camera.main;
-        var projector = new CameraScreenProjector(cam);
-
-        CalculateCurrentState(projector);
+        CalculateCurrentState(cam);
         DispatchEvents();
     }
 
     /// <summary>
     /// 監視対象の矩形化と重なり判定を行い、現在の重なり状態を計算する
     /// </summary>
-    private void CalculateCurrentState(IScreenProjector projector)
+    private void CalculateCurrentState(Camera cam)
     {
         currentState.Clear();
 
@@ -151,11 +149,11 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         //始めに各要素の矩形化(Vector2)を行う
         foreach (var nonUI in notUIs)
         {
-            if (CalcScreenQuad(nonUI, targetCanvas, projector, quadNonUI) == false) continue;
+            if (CalcScreenQuad(nonUI, targetCanvas, cam, quadNonUI) == false) continue;
 
             foreach (var ui in UIs)
             {
-                if (CalcScreenQuad(ui, targetCanvas, projector, quadUI) == false) continue;
+                if (CalcScreenQuad(ui, targetCanvas, cam, quadUI) == false) continue;
 
                 //重なりを検知した場合
                 if (strategy.Overlap(quadNonUI, quadUI))
@@ -198,9 +196,8 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         return true;
     }
 
-    private static bool CalcScreenQuad(Component obj, Canvas canvas, IScreenProjector projector, List<Vector2> screenPts)
+    private static bool CalcScreenQuad(Component obj, Canvas canvas, Camera cam, Vector2[] screenPts)
     {
-        screenPts.Clear();
         if (obj is RectTransform rt)
         {
             if (TryGetWorldCorners(rt, worldCorners) == false) return false;
@@ -209,11 +206,11 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             {
                 if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
                 {
-                    screenPts.Add(RectTransformUtility.WorldToScreenPoint(null, worldCorners[i]));
+                    screenPts[i] = RectTransformUtility.WorldToScreenPoint(null, worldCorners[i]);
                 }
                 else
                 {
-                    screenPts.Add(projector.WorldToScreen(worldCorners[i]));
+                    screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
                 }
             }
             return true;
@@ -223,7 +220,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
         for (int i = 0; i < 4; i++)
         {
-            screenPts.Add(projector.WorldToScreen(worldCorners[i]));
+            screenPts[i] = cam.WorldToScreenPoint(worldCorners[i]);
         }
         return true;
     }
@@ -235,14 +232,13 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
         var cam = (targetCamera != null) ? targetCamera : Camera.main;
         if (cam == null) return;
-        var projector = new CameraScreenProjector(cam);
 
         Gizmos.color = Color.yellow;
         foreach (var nonUI in notUIs)
         {
             if (nonUI == null) continue;
 
-            if (CalcScreenQuad(nonUI, targetCanvas, projector, gizmoQuad))
+            if (CalcScreenQuad(nonUI, targetCanvas, cam, gizmoQuad))
             {
                 DrawQuadGizmo(gizmoQuad, cam, strategy);
             }
@@ -253,14 +249,14 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         {
             if (ui == null) continue;
 
-            if (CalcScreenQuad(ui, targetCanvas, projector, gizmoQuad))
+            if (CalcScreenQuad(ui, targetCanvas, cam, gizmoQuad))
             {
                 DrawQuadGizmo(gizmoQuad, cam, strategy);
             }
         }
     }
 
-    private static void DrawQuadGizmo(IReadOnlyList<Vector2> quad, Camera cam, IOverlapStrategy s)
+    private static void DrawQuadGizmo(Vector2[] quad, Camera cam, IOverlapStrategy s)
     {
         if (s is AABBStrategy)
         {
@@ -283,12 +279,12 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
         else
         {
-            for (int i = 0; i < quad.Count; i++)
+            for (int i = 0; i < 4; i++)
             {
                 Vector3 a = cam.ScreenToWorldPoint(
                     new(quad[i].x, quad[i].y, cam.nearClipPlane));
                 Vector3 b = cam.ScreenToWorldPoint(
-                    new(quad[(i + 1) % quad.Count].x, quad[(i + 1) % quad.Count].y, cam.nearClipPlane));
+                    new(quad[(i + 1) % 4].x, quad[(i + 1) % 4].y, cam.nearClipPlane));
                 Gizmos.DrawLine(a, b);
             }
         }

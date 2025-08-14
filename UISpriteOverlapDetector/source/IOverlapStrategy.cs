@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public interface IOverlapStrategy
 {
-    // OBB や Rect 型ではなく、任意数の頂点リストを受け取る
-    bool Overlap(IReadOnlyList<Vector2> a, IReadOnlyList<Vector2> b);
+    // OBB や Rect 型ではなく、四隅の Vector2 配列を受け取る
+    bool Overlap(Vector2[] a, Vector2[] b);
 }
