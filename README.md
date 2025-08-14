@@ -1,14 +1,16 @@
 # UISpriteOverlapDetector
 
-- Unity2D 用のスクリプト群で、`RectTransform` を持つ UI と `SpriteRenderer` などの非 UI の重なりを検出する
-- 対象同士が重なった瞬間, 重なっている間, 離れた瞬間をそれぞれイベントとして受け取り、UI の半透明化や当たり判定の補助などに利用できる
+- Unity2D 用のスクリプト群で、`RectTransform` を持つ UI と `Renderer` や `Collider2D` などの非 UI の重なりを検出する
+- 対象同士が重なった瞬間、重なっている間、離れた瞬間をそれぞれイベントとして受け取り、UI の半透明化や当たり判定の補助などに利用できる
 
 ## 機能
-- 任意の `RectTransform` と `SpriteRenderer` を登録して画面上での重なりを監視
-- 重なりの状態に応じて `OnOverlapEnter`, `OnOverlapStay`, `OnOverlapExit` を発火
+- 任意の `RectTransform` と `Renderer` や `Collider2D` を登録して画面上での重なりを監視
+- 重なりの状態に応じて `OnOverlapEnter`、`OnOverlapStay`、`OnOverlapExit` を発火
 - 判定アルゴリズムを `IOverlapStrategy` で差し替え可能
   - 軸整列矩形を用いる `AABBStrategy`
-  - 傾きも考慮する `SATStrategy` (OBB)
+  - 傾きを考慮する `SATStrategy`
+- 非 UI コンポーネントの矩形化は `IQuadProvider` で拡張可能
+  - 標準で `SpriteRenderer`、`Renderer`、`Collider2D` 用を内蔵
 - `IncludeRotated` オプションで自動的に判定方法を切り替え
 - Gizmos による確認用のデバッグ描画
 
@@ -16,7 +18,7 @@
 ```mermaid
 classDiagram
     direction TD
-
+    
     class IOverlapStrategy {
         <<interface>>
         + bool Overlap(Vector2[] a, Vector2[] b)
@@ -28,20 +30,44 @@ classDiagram
     IOverlapStrategy <|.. AABBStrategy
     IOverlapStrategy <|.. SATStrategy
 
+    class IQuadProvider {
+        <<interface>>
+        + int Priority
+        + bool TryGetWorldQuad(Component, Vector3[])
+    }
+
+    class SpriteRendererQuadProvider
+    class RendererQuadProvider
+    class Collider2DQuadProvider
+
+    IQuadProvider <|.. SpriteRendererQuadProvider
+    IQuadProvider <|.. RendererQuadProvider
+    IQuadProvider <|.. Collider2DQuadProvider
+
+    class QuadProviderRegistry {
+        + static void Register(IQuadProvider)
+        + static bool TryGetWorldQuad(Component, Vector3[])
+    }
+
     class UISpriteOverlapDetector {
         + List notUIs
         + List UIs
         - HashSet previousState
         - IOverlapStrategy strategy
+        + bool IncludeRotated
 
         + event OnOverlapEnter
         + event OnOverlapStay
         + event OnOverlapExit
         + void AddNotUI(Component)
+        + void RemoveNotUI(Component)
         + void AddUI(RectTransform)
+        + void RemoveUI(RectTransform)
     }
 
     UISpriteOverlapDetector o-- IOverlapStrategy
+    UISpriteOverlapDetector o-- QuadProviderRegistry
+    QuadProviderRegistry o-- IQuadProvider
     UISpriteOverlapDetector "1" --> "*" Component
     UISpriteOverlapDetector "1" --> "*" RectTransform
 ```
@@ -54,7 +80,7 @@ classDiagram
 public class Sample : MonoBehaviour
 {
     [SerializeField] private UISpriteOverlapDetector detector;
-    [SerializeField] private SpriteRenderer player;
+    [SerializeField] private Collider2D player;
     [SerializeField] private RectTransform ui;
 
     private void Start()
@@ -82,6 +108,25 @@ public class Sample : MonoBehaviour
         Debug.Log($"Exit: {c.name} x {r.name}");
     }
 }
+```
+
+## 拡張
+- `IQuadProvider` を実装することで独自コンポーネントにも対応可能
+```csharp
+public sealed class CustomQuadProvider : IQuadProvider
+{
+    public int Priority => 50;
+
+    public bool TryGetWorldQuad(Component c, Vector3[] worldCorners)
+    {
+        if (c is not MyComponent comp) return false;
+        // worldCorners に四隅を格納
+        return true;
+    }
+}
+
+// アプリ起動時などに登録
+QuadProviderRegistry.Register(new CustomQuadProvider());
 ```
 
 ## 必要環境
