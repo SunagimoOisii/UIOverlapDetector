@@ -110,6 +110,16 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
     private void LateUpdate()
     {
         var cam = (targetCamera != null) ? targetCamera : Camera.main;
+
+        CalculateCurrentState(cam);
+        DispatchEvents();
+    }
+
+    /// <summary>
+    /// 監視対象の矩形化と重なり判定を行い、現在の重なり状態を計算する
+    /// </summary>
+    private void CalculateCurrentState(Camera cam)
+    {
         currentState.Clear();
 
         //監視対象グループからnullを破棄
@@ -133,7 +143,13 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
                 }
             }
         }
+    }
 
+    /// <summary>
+    /// Enter, Stay, Exit を計算し、対応イベントを発行する
+    /// </summary>
+    private void DispatchEvents()
+    {
         //Enter, Stay, Exit判定
         entered.Clear();
         stayed.Clear();
