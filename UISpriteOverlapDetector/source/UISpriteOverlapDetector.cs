@@ -18,7 +18,8 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
     [Header("オプション")]
     [SerializeField] private bool visualizeGizmos = true;
-    [SerializeField] private bool includeRotated  = false;
+    [SerializeField] private bool useDepthCheck  = true;
+    [SerializeField] private bool includeRotated = false;
     public bool IncludeRotated
     {
         get => includeRotated;
@@ -52,10 +53,10 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
     //CalcScreenQuadで使用する一時配列
     private static readonly Vector3[] worldCorners = new Vector3[8];
-    private readonly List<Vector2> quadNonUI = new(4);
-    private readonly List<Vector2> quadUI    = new(4);
+    private readonly List<Vector3> quadNonUI = new(4);
+    private readonly List<Vector3> quadUI    = new(4);
 #if UNITY_EDITOR
-    private readonly List<Vector2> gizmoQuad = new(4);
+    private readonly List<Vector3> gizmoQuad = new(4);
 #endif
 
     #region 外部公開関数
@@ -155,7 +156,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         UIs.RemoveAll(x => x == null);
 
         //監視グループの全組み合わせを走査
-        //始めに各要素の矩形化(Vector2)を行う
+        //始めに各要素の矩形化(Vector3)を行う
         foreach (var nonUI in notUIs)
         {
             if (CalcScreenQuad(nonUI, targetCanvas, projector, quadNonUI) == false) continue;
@@ -167,7 +168,10 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
                 //重なりを検知した場合
                 if (strategy.Overlap(quadNonUI, quadUI))
                 {
-                    currentState.Add(new PairKey(nonUI, ui));
+                    if (useDepthCheck == false || GetMinZ(quadNonUI) < GetMinZ(quadUI))
+                    {
+                        currentState.Add(new PairKey(nonUI, ui));
+                    }
                 }
             }
         }
@@ -205,7 +209,17 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         return true;
     }
 
-    private static bool CalcScreenQuad(Component obj, Canvas canvas, IScreenProjector projector, List<Vector2> screenPts)
+    private static float GetMinZ(IReadOnlyList<Vector3> pts)
+    {
+        float min = pts[0].z;
+        for (int i = 1; i < pts.Count; i++)
+        {
+            if (pts[i].z < min) min = pts[i].z;
+        }
+        return min;
+    }
+
+    private static bool CalcScreenQuad(Component obj, Canvas canvas, IScreenProjector projector, List<Vector3> screenPts)
     {
         screenPts.Clear();
         if (obj is RectTransform rt)
@@ -214,14 +228,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
 
             for (int i = 0; i < 4; i++)
             {
-                if (canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-                {
-                    screenPts.Add(RectTransformUtility.WorldToScreenPoint(null, worldCorners[i]));
-                }
-                else
-                {
-                    screenPts.Add(projector.WorldToScreen(worldCorners[i]));
-                }
+                screenPts.Add(projector.WorldToScreen(worldCorners[i]));
             }
             return true;
         }
@@ -232,6 +239,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         float minY = float.MaxValue;
         float maxX = float.MinValue;
         float maxY = float.MinValue;
+        float minZ = float.MaxValue;
 
         for (int i = 0; i < 8; i++)
         {
@@ -240,12 +248,13 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             if (sp.y < minY) minY = sp.y;
             if (sp.x > maxX) maxX = sp.x;
             if (sp.y > maxY) maxY = sp.y;
+            if (sp.z < minZ) minZ = sp.z;
         }
 
-        screenPts.Add(new Vector2(minX, minY));
-        screenPts.Add(new Vector2(maxX, minY));
-        screenPts.Add(new Vector2(maxX, maxY));
-        screenPts.Add(new Vector2(minX, maxY));
+        screenPts.Add(new Vector3(minX, minY, minZ));
+        screenPts.Add(new Vector3(maxX, minY, minZ));
+        screenPts.Add(new Vector3(maxX, maxY, minZ));
+        screenPts.Add(new Vector3(minX, maxY, minZ));
         return true;
     }
 
@@ -281,7 +290,7 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
     }
 
-    private static void DrawQuadGizmo(IReadOnlyList<Vector2> quad, Camera cam, IOverlapStrategy s)
+    private static void DrawQuadGizmo(IReadOnlyList<Vector3> quad, Camera cam, IOverlapStrategy s)
     {
         if (s is AABBStrategy)
         {
