@@ -35,6 +35,10 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         public override int GetHashCode() => HashCode.Combine(c, r);
     }
     private readonly HashSet<PairKey> previousState = new();
+    private HashSet<PairKey> currentState;
+    private HashSet<PairKey> entered;
+    private HashSet<PairKey> stayed;
+    private HashSet<PairKey> exited;
     private IOverlapStrategy strategy;
 
     // CalcScreenQuadで使用する一時配列
@@ -81,13 +85,17 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
             targetCanvas = GetComponentInParent<Canvas>();
         }
 
-        strategy = includeRotated ? new SATStrategy() : new AABBStrategy();
+        strategy     = includeRotated ? new SATStrategy() : new AABBStrategy();
+        currentState = new HashSet<PairKey>();
+        entered      = new HashSet<PairKey>();
+        stayed       = new HashSet<PairKey>();
+        exited       = new HashSet<PairKey>();
     }
 
     private void LateUpdate()
     {
         var cam = (targetCamera != null) ? targetCamera : Camera.main;
-        var currentState = new HashSet<PairKey>();
+        currentState.Clear();
 
         //監視対象グループからnullを破棄
         notUIs.RemoveAll(x => x == null);
@@ -112,9 +120,12 @@ public sealed class UISpriteOverlapDetector : MonoBehaviour
         }
 
         //Enter, Stay, Exit判定
-        var entered = new HashSet<PairKey>(currentState);
-        var stayed  = new HashSet<PairKey>(currentState);
-        var exited  = new HashSet<PairKey>(previousState);
+        entered.Clear();
+        entered.UnionWith(currentState);
+        stayed.Clear();
+        stayed.UnionWith(currentState);
+        exited.Clear();
+        exited.UnionWith(previousState);
         entered.ExceptWith(previousState);
         stayed.IntersectWith(previousState);
         exited.ExceptWith(currentState);
