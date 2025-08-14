@@ -12,6 +12,7 @@ public static class QuadProviderRegistry
     {
         //優先度の高い順に登録されるようソートする
         Register(new SpriteRendererQuadProvider());
+        Register(new LineRendererQuadProvider());
         Register(new RendererQuadProvider());
         Register(new Collider2DQuadProvider());
     }
